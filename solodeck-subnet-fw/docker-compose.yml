@@ -12,16 +12,20 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        command -v iptables >/dev/null 2>&1 || { apt-get update && apt-get install -y iptables procps; }
-        LAN_IF=wlp1s0
+        command -v iptables >/dev/null 2>&1 || { apt-get update && apt-get install -y iptables procps iproute2; }
         while true; do
-          sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
-          sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null 2>&1
-          iptables -C DOCKER-USER -i tailscale0 -o "$$LAN_IF" -j ACCEPT 2>/dev/null \
-            || iptables -I DOCKER-USER -i tailscale0 -o "$$LAN_IF" -j ACCEPT
-          iptables -C DOCKER-USER -i "$$LAN_IF" -o tailscale0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null \
-            || iptables -I DOCKER-USER -i "$$LAN_IF" -o tailscale0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-          iptables -t nat -C POSTROUTING -s 100.64.0.0/10 -o "$$LAN_IF" -j MASQUERADE 2>/dev/null \
-            || iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o "$$LAN_IF" -j MASQUERADE
+          # Re-detected every pass: the box can move between Wi-Fi and wired, and
+          # rules pinned to a downed interface silently stop routing.
+          LAN_IF=$$(ip route show default 2>/dev/null | grep -v ' dev tailscale0' | sed -n 's/.* dev \([^ ]*\).*/\1/p' | head -n1)
+          if [ -n "$$LAN_IF" ]; then
+            sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
+            sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null 2>&1
+            iptables -C DOCKER-USER -i tailscale0 -o "$$LAN_IF" -j ACCEPT 2>/dev/null \
+              || iptables -I DOCKER-USER -i tailscale0 -o "$$LAN_IF" -j ACCEPT
+            iptables -C DOCKER-USER -i "$$LAN_IF" -o tailscale0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null \
+              || iptables -I DOCKER-USER -i "$$LAN_IF" -o tailscale0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+            iptables -t nat -C POSTROUTING -s 100.64.0.0/10 -o "$$LAN_IF" -j MASQUERADE 2>/dev/null \
+              || iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o "$$LAN_IF" -j MASQUERADE
+          fi
           sleep 30
         done

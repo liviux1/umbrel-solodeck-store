@@ -4,7 +4,7 @@ name: Tailscale Subnet Fix
 tagline: Keeps LAN miners reachable over Tailscale across reboots
 icon: https://raw.githubusercontent.com/getumbrel/umbrel-apps/master/tailscale/icon.svg
 category: networking
-version: "1.0.0"
+version: "1.1.0"
 port: 8245
 description: >-
   Re-applies the Docker FORWARD-DROP bypass rules (DOCKER-USER ACCEPT +
@@ -14,8 +14,8 @@ description: >-
 
 
   Self-healing: re-asserts the rules every 30s and survives reboots, power-offs
-  and app updates because umbrelOS manages the lifecycle. Pinned to LAN
-  interface wlp1s0 (Wi-Fi); change the compose if the box moves to wired eno1.
+  and app updates because umbrelOS manages the lifecycle. Auto-detects the LAN
+  interface from the default route, so Wi-Fi and wired both work with no edits.
 
 
   Headless: no web UI; nothing to open.
@@ -29,8 +29,9 @@ support: https://github.com/liviux1
 gallery:
   - https://raw.githubusercontent.com/getumbrel/umbrel-apps/master/tailscale/gallery/1.jpg
 releaseNotes: >-
-  Initial release. Folds the manual sidecar firewall loop into a managed Umbrel
-  app so it survives full power-offs and relocations.
+  Auto-detects the LAN interface from the default route each pass instead of
+  using a hardcoded wlp1s0, so moving the box between Wi-Fi and wired no longer
+  silently breaks routing.
 dependencies:
   - tailscale
 path: ""
