@@ -20,7 +20,7 @@ installed first.
 If you run a Tailscale subnet router on Umbrel, Docker's `DOCKER-USER` chain
 drops the forwarded traffic, so a phone on cellular can't reach anything on your
 home LAN. That breaks monitoring LAN miners from away, which is what
-[SoloDeck](https://solodeck.app) and CK Solo Monitor need.
+[SoloDeck](https://solodeck.app) needs.
 
 This app re-applies the rules that make that routing work:
 
